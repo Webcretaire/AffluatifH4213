@@ -10,4 +10,4 @@ Il se divise en trois composants :
 
 - [Un site web](/SiteWeb), qui sert d'interface pour les clients et les administrateurs
 - [Des interpréteurs](/Interpréteur), qui se chargent du traitement vidéo
-- Un analyseur, qui effectue des prévisions à partir des données issues des interpréteurs
+- [Un analyseur](/Analyseur), qui effectue des prévisions à partir des données issues des interpréteurs
