@@ -1,0 +1,72 @@
+routes:
+  - uri: '/p/connexion'
+    controller: 'Affluatif\Processing\AuthProcessing'
+    action: 'connexionWeb'
+
+  - uri: '/p/deconnexion'
+    controller: 'Affluatif\Processing\AuthProcessing'
+    action: 'deconnexion'
+
+  - uri: '/p/inscription'
+    controller: 'Affluatif\Processing\AuthProcessing'
+    action: 'inscription'
+
+  - uri: '/p/edition-utilisateur'
+    controller: 'Affluatif\Processing\AuthProcessing'
+    action: 'editUser'
+
+  - uri: '/p/ajout-source'
+    controller: 'Affluatif\Processing\VideoProcessing'
+    action: 'addSource'
+
+  - uri: '/p/edition-source'
+    controller: 'Affluatif\Processing\VideoProcessing'
+    action: 'editSource'
+
+  - uri:
+      - '~/p/activation-video-([0-9]+)~'
+      - '/p/activation-video'
+    controller: 'Affluatif\Processing\VideoProcessing'
+    action: 'setActive'
+
+  - uri:
+      - '~/p/desactivation-video-([0-9]+)~'
+      - '/p/desactivation-video'
+    controller: 'Affluatif\Processing\VideoProcessing'
+    action: 'setInactive'
+
+  - uri:
+      - '~/p/suppression-utilisateur-([0-9]+)~'
+      - '/p/suppression-utilisateur'
+    controller: 'Affluatif\Processing\AuthProcessing'
+    action: 'deleteUser'
+
+  - uri:
+      - '~/p/suppression-video-([0-9]+)~'
+      - '/p/suppression-video'
+    controller: 'Affluatif\Processing\VideoProcessing'
+    action: 'deleteVideo'
+
+  - uri: '/p/ajout-droit'
+    controller: 'Affluatif\Processing\VideoProcessing'
+    action: 'allowFlux'
+
+  - uri: '/p/suppression-droit'
+    controller: 'Affluatif\Processing\VideoProcessing'
+    action: 'disallowFlux'
+
+  - uri: '/p/prediction-flux'
+    controller: 'Affluatif\Processing\VideoProcessing'
+    action: 'getPrediction'
+
+  - uri: '/p/historique-affluence'
+    controller: 'Affluatif\Processing\VideoProcessing'
+    action: 'chartistData'
+
+  - uri: '/p/ajout-alerte'
+    controller: 'Affluatif\Processing\AlertesProcessing'
+    action: 'ajout'
+
+  - uri: '/p/suppression-alerte'
+    controller: 'Affluatif\Processing\AlertesProcessing'
+    action: 'suppression'

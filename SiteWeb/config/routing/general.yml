@@ -1,0 +1,17 @@
+routes:
+  - uri: '/'
+    controller: 'Affluatif\View\Homepage'
+
+  - uri: '/direct'
+    controller: 'Affluatif\View\LiveView'
+
+  - uri: '/admin/'
+    controller: 'Affluatif\View\AdminHome'
+
+  - uri: '/alertes'
+    controller: 'Affluatif\View\Alertes'
+
+  - uri:
+      - '/video'
+      - '~^/video-([0-9]+)$~'
+    controller: 'Affluatif\View\StatsVideo'

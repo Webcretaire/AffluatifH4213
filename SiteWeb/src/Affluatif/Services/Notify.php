@@ -1,0 +1,90 @@
+<?php
+
+namespace Affluatif\Services;
+
+use Affluatif\BaseClass;
+
+/**
+ * Gère les notifications colorées qui s'affichent sur le site
+ *
+ * @package Affluatif\Services
+ */
+class Notify extends BaseClass
+{
+    /**
+     * Génère le code JavaScript pour déclencher une notification
+     * @param string $message   Le contenu de la notification
+     * @param string $color     La couleur (standards Bootstrap : sucess, danger, etc.)
+     * @param int $ttl          Time To Live : durée avant disparition autilatique (0 = infini)
+     * @param int $id_bdd       Id de la notification dans la DataBase (si elle en est issue)
+     * @param string $url       Lien optionnel à ouvrir au clic sur la notification
+     * @return string           JavaScript généré
+     */
+    function notify($message, $color = "success", $ttl = 0, $id_bdd = null, $url = null)
+    {
+        $output = '';
+
+        $closeOption = "null";
+        if (!is_null($id_bdd))
+            $closeOption = 'function() { notifSeen(' . $id_bdd . '); }';
+
+        $output .= '<script type="text/javascript">
+                    $.notify({';
+
+        if (!is_null($url))
+            $output .= "url: \"$url\",";
+
+        $output .= '
+                        message: "' . Functions::escapeQuoteAndNL($message) . '" 
+                    },{
+                        onClosed: ' . $closeOption . ',
+                        delay: ' . $ttl . ',
+                        type: "' . $color . '"
+                    });
+                </script>';
+
+        return $output;
+    }
+
+    /**
+     * Définit une notification qui s'affichera sur la prochaine page chargée
+     * @see Notify::notify()
+     * @param $message
+     * @param string $color
+     * @param int $ttl
+     * @param null $id_bdd
+     * @param null $url
+     */
+    function setNotif($message, $color = "success", $ttl = 0, $id_bdd = null, $url = null)
+    {
+        if (!isset($_SESSION['notify_stack']))
+            $_SESSION['notify_stack'] = [];
+
+        $_SESSION['notify_stack'][] = [
+            'message'   => $message,
+            'color'     => $color,
+            'TTL'       => $ttl,
+            'id_bdd'    => $id_bdd,
+            'url'       => $url
+        ];
+    }
+
+    /**
+     * Vérifie si une notification doit être créée, et renvoie le JavaScript correspondant le cas échéant
+     *
+     * Vérifie sur la base de la variable SESSION notify_stack et pas dans la base de données
+     * @return string   Le JavaScript généré, ou une chaîne vide
+     */
+    function checkNotifs()
+    {
+        $js_output = "";
+        if (isset($_SESSION['notify_stack'])) {
+            foreach ($_SESSION['notify_stack'] as $notif) {
+                $js_output .= $this->notify($notif['message'], $notif['color'], $notif['TTL'], $notif['id_bdd'], $notif['url']);
+            }
+            unset($_SESSION['notify_stack']);
+        }
+
+        return $js_output;
+    }
+}

@@ -1,0 +1,171 @@
+<?php
+
+namespace Affluatif\View;
+
+use Affluatif\Services\Functions;
+use Affluatif\Services\Securite;
+
+/**
+ * Class LiveView
+ *
+ * @package Affluatif\View
+ */
+class LiveView extends BaseTemplate
+{
+    /**
+     * @var array
+     */
+    private $video_sources;
+
+    /**
+     * @var int
+     */
+    private $page = 1;
+
+    /**
+     * @var int
+     */
+    private $page_size = 6;
+
+    /**
+     * @var string
+     */
+    private $fluxSearch = '';
+
+    /**
+     * @var int
+     */
+    private $total;
+
+    public function __construct(\PDO $bdd = null)
+    {
+        parent::__construct($bdd);
+
+        $this->services->getSecurite()->verificationUser();
+
+        if (isset($_GET['p'])) {
+            $this->page = Securite::validateInt($_GET['p']);
+        }
+
+        $this->fluxSearch = '';
+        if (isset($_GET['s'])) {
+            $search           = "'%" . Functions::cleanInput($_GET['s']) . "%'";
+            $this->fluxSearch = " AND (description LIKE $search) ";
+        }
+        $limit  = $this->page_size;
+        $offset = ($this->page - 1) * $this->page_size;
+
+        if ($this->services->getSecurite()->isAdmin()) {
+            $this->total = $this->bddRequest(
+                "SELECT COUNT(*) FROM flux_video WHERE 1 = 1 {$this->fluxSearch}"
+            )->fetchColumn();
+
+            $this->video_sources = $this->bddRequest(
+                "SELECT * FROM flux_video
+                WHERE 1 = 1
+                  {$this->fluxSearch}
+                ORDER BY actif DESC, id
+                LIMIT $limit
+                OFFSET $offset"
+            )->fetchAll();
+        } else {
+            $this->total = $this->bddRequest(
+                "SELECT COUNT(*) 
+                FROM flux_video 
+                WHERE id IN (
+                  SELECT flux_id 
+                  FROM flux_utilisateur 
+                  WHERE utilisateur_id = :user
+                ) {$this->fluxSearch}"
+            )->fetchColumn();
+
+            $this->video_sources = $this->bddRequest(
+                "SELECT * FROM flux_video
+                WHERE id IN (
+                  SELECT flux_id 
+                  FROM flux_utilisateur 
+                  WHERE utilisateur_id = :user
+                )
+                  {$this->fluxSearch}
+                ORDER BY actif DESC, id
+                LIMIT $limit
+                OFFSET $offset",
+                ['user' => $_SESSION['id']]
+            )->fetchAll();
+        }
+
+        if (isset($_GET['p'])) {
+            $this->page = Securite::validateInt($_GET['p']);
+        }
+    }
+
+    protected function blockBanner()
+    {
+        ?>
+        <h1 class="text-white black-glow">Affichage en direct</h1>
+        <?php
+    }
+
+    protected function blockSections()
+    {
+        ?>
+        <div class="whole-wrap">
+            <div class="container">
+                <div class="section-top-border">
+                    <h1 class="mb-30" style="text-align: center">Flux vidéos</h1>
+                    <form action="<?php echo $_SERVER['REQUEST_URI']; ?>" method="get">
+                        <div class="clearfix" style="text-align: center">
+                            <label>
+                                <input type="text" class="form-control" name="s" <?php
+                                if (isset($_GET['s']) && !empty($_GET['s'])) {
+                                    echo 'value="' . Functions::cleanInput($_GET['s']) . '"';
+                                } else {
+                                    echo 'placeholder="Chercher un flux"';
+                                } ?>/>
+                            </label>
+                            <button type="submit" class="btn btn-primary mb-1">
+                                <i class="fa fa-angle-double-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <div class="row gallery-item">
+                        <?php
+                        foreach ($this->video_sources as $source) {
+                            ?>
+                            <div class="col-md-4">
+                                <?php if ($source['actif']) { ?>
+                                    <a href="<?php echo $source['url']; ?>" class="img-pop-up">
+                                        <div class="single-gallery-image"
+                                             style="background: url(<?php echo $source['url']; ?>);">
+                                        </div>
+                                    </a>
+                                <?php } else { ?>
+                                    <div class="single-gallery-image"
+                                         style="background: url('/img/offline.jpg');">
+                                    </div>
+                                <?php } ?>
+                                <h4 style="text-align: center" class="mt-1">
+                                    <a href="/video-<?php echo $source['id']; ?>">
+                                        <button class="btn btn-primary btn-sm">
+                                            <i class="fa fa-bar-chart" aria-hidden="true"></i>
+                                        </button>
+                                        <?php echo $source['description']; ?>
+                                    </a>
+                                </h4>
+                            </div>
+                            <?php
+                        }
+
+                        $this->services->getFunctions()->renderPaginator(
+                            $this->total,
+                            $this->page,
+                            $this->page_size
+                        );
+                        ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+}

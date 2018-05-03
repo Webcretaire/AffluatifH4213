@@ -1,0 +1,24 @@
+security:
+    password_salt: 'votre_salt'             # Chaine aléatoire utilisée pour hasher les mot de passe de manière plus sécurisée
+    aes_key: 'votre_cle_aes'                # Clé AES utilisée pour la sécurité des mot de passe utilisateur
+    aes_iv: 'votre_vecteur_dinitialisation' # Vecteur d'initialisation utilisée pour l'encryption AES (obligatoirement 16 caractères)
+
+database:
+    host: 'votre_ip/domaine_MySQL'          # Adresse du serveur hébergeant la base de données
+    name: 'nom_de_votre_base'               # Nom de la base de données
+    login: 'votre_login'                    # Nom d'utilisateur MySQL
+    password: 'votre_mot_de_passe'          # Mot de passe MySQL
+
+rabbitmq:
+    host: 'votre_ip/domaine_RabbitMQ'       # Adresse du serveur hébergeant RabbitMQ
+    port: 3306                              # Port utilisé par RabbitMQ (3306 = autorisé par la DSI INSA Lyon)
+    login: 'votre_login'                    # Nom d'utilisateur RabbitMQ
+    password: 'votre_mot_de_passe'          # Mot de passe RabbitMQ
+
+google:
+    api_maps: 'votre_cle_API_maps'          # Clé d'API Google Maps
+
+analizer:
+    endpoint: 'point_API_REST_analyseur'    # Point d'API permettant de récupérer les prévisions de l'analyseur sur son API REST
+    login: 'votre_login'                    # Nom d'utilisateur sur l'analyseur
+    password: 'votre_mot_de_passe'          # Mot de passe sur l'analyseur

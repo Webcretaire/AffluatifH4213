@@ -1,0 +1,1 @@
+./phpDocumentor.phar -d "./src" -t "./html/docs" --template="clean"

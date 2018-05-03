@@ -1,0 +1,219 @@
+<?php
+
+namespace Affluatif\View;
+
+use Affluatif\Services\Functions;
+
+/**
+ * Class Home
+ *
+ * @package Affluatif\View\Admin
+ */
+class AdminHome extends BaseTemplate
+{
+    public function __construct(\PDO $bdd = null)
+    {
+        parent::__construct($bdd);
+        $this->services->getSecurite()->verificationAdmin();
+    }
+
+    protected function blockBanner()
+    {
+        ?>
+        <h1 class="text-white black-glow">Administration</h1>
+        <?php
+    }
+
+    protected function blockSections()
+    {
+        ?>
+        <div class="whole-wrap">
+            <div class="container">
+
+                <!-- VIDÉOS -->
+
+                <div class="section-top-border">
+                    <div class="text-center mb-30">
+                        <h1>Sources vidéo</h1>
+                        <button class="genric-btn success circle mt-20"
+                                type="button"
+                                onclick="loadModale('/m/ajout-source', 'modale__newSource')">
+                            Ajouter
+                        </button>
+                    </div>
+                    <div class="progress-table-wrap">
+                        <div class="progress-table">
+                            <div class="table-head">
+                                <div class="serial">#</div>
+                                <div class="table_text table_text_30">URL</div>
+                                <div class="table_text table_text_25">Description</div>
+                                <div class="table_text table_text_20">Localisation</div>
+                                <div class="table_text table_text_15">Actions</div>
+                            </div>
+                            <?php
+                            $sources = $this->bddRequest('SELECT * FROM flux_video ORDER BY actif DESC, id')->fetchAll();
+                            foreach ($sources as $source) {
+                                ?>
+                                <div class="table-row">
+                                    <div class="serial"><?php echo $source['id']; ?></div>
+                                    <div class="table_text table_text_30">
+                                        <a target="_blank" href="<?php echo $source['url']; ?>">
+                                            <?php echo $source['url']; ?>
+                                        </a>
+                                    </div>
+                                    <div class="table_text table_text_25"><?php echo $source['description']; ?></div>
+                                    <div class="table_text table_text_20">
+                                        <a href="https://www.google.fr/maps/@<?php echo $source['loc_lat'] . ',' . $source['loc_lon']; ?>,14z"
+                                           target="_blank">
+                                            <?php echo $source['loc_lat'] . ' ; ' . $source['loc_lon']; ?>
+                                        </a>
+                                    </div>
+                                    <div class="table_text table_text_15">
+                                        <?php if ($source['actif']) { ?>
+                                            <button class="genric-btn bubble_btn warning circle"
+                                                    type="button"
+                                                    onclick="setInactive('<?php
+                                                    echo Functions::escapeSQuoteAndNL($source['description']);
+                                                    ?>', <?php
+                                                    echo $source['id'];
+                                                    ?>)">
+                                                <span class="fa fa-stop"></span>
+                                            </button>
+                                        <?php } else { ?>
+                                            <button class="genric-btn bubble_btn success circle"
+                                                    type="button"
+                                                    onclick="setActive('<?php
+                                                    echo Functions::escapeSQuoteAndNL($source['description']);
+                                                    ?>', <?php
+                                                    echo $source['id'];
+                                                    ?>)">
+                                                <span class="fa fa-check"></span>
+                                            </button>
+                                        <?php } ?>
+                                        <button class="genric-btn bubble_btn info circle"
+                                                type="button"
+                                                onclick="updateModale('/m/edition-source?s=<?php echo $source['id']; ?>', 'modale__editSource');">
+                                            <span class="fa fa-edit"></span>
+                                        </button>
+                                        <button class="genric-btn bubble_btn danger circle"
+                                                type="button"
+                                                onclick="deleteVideo('<?php
+                                                echo Functions::escapeSQuoteAndNL($source['description']);
+                                                ?>', <?php
+                                                echo $source['id'];
+                                                ?>)">
+                                            <span class="fa fa-trash"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <?php
+                            }
+                            ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UTILISATEURS -->
+
+                <div class="section-top-border">
+                    <div class="text-center mb-30">
+                        <h1>Utilisateurs</h1>
+                        <button class="genric-btn success circle mt-20"
+                                type="button"
+                                onclick="loadModale('/m/ajout-utilisateur', 'modale__newUser')">
+                            Ajouter
+                        </button>
+                    </div>
+                    <div class="progress-table-wrap">
+                        <div class="progress-table">
+                            <div class="table-head">
+                                <div class="serial">#</div>
+                                <div class="table_text table_text_15">Prénom</div>
+                                <div class="table_text table_text_15">Nom</div>
+                                <div class="table_text table_text_30">Mail</div>
+                                <div class="table_text table_text_15">Statut</div>
+                                <div class="table_text table_text_15">Actions</div>
+                            </div>
+                            <?php
+                            $users = $this->bddRequest('SELECT id, prenom, nom, mail, statut FROM utilisateurs')->fetchAll();
+                            foreach ($users as $user) {
+                                ?>
+                                <div class="table-row">
+                                    <div class="serial"><?php echo $user['id']; ?></div>
+                                    <div class="table_text table_text_15"><?php echo $user['prenom']; ?></div>
+                                    <div class="table_text table_text_15"><?php echo $user['nom']; ?></div>
+                                    <div class="table_text table_text_30"><?php echo $user['mail']; ?></div>
+                                    <div class="table_text table_text_15">
+                                        <?php echo $this->services->getSecurite()->getStatut($user['statut']); ?>
+                                    </div>
+                                    <div class="table_text table_text_15">
+                                        <button class="genric-btn bubble_btn success circle"
+                                                type="button"
+                                                onclick="updateModale('/m/droits-utilisateur?u=<?php echo $user['id']; ?>', 'modale__rightsUser');">
+                                            <span class="fa fa-lock"></span>
+                                        </button>
+                                        <button class="genric-btn bubble_btn info circle"
+                                                type="button"
+                                                onclick="updateModale('/m/edition-utilisateur?u=<?php echo $user['id']; ?>', 'modale__editUser');">
+                                            <span class="fa fa-edit"></span>
+                                        </button>
+                                        <button class="genric-btn bubble_btn danger circle"
+                                                type="button"
+                                                onclick="deleteUser('<?php
+                                                echo Functions::escapeSQuoteAndNL($user['prenom']);
+                                                ?>', '<?php
+                                                echo Functions::escapeSQuoteAndNL($user['nom']);
+                                                ?>', <?php
+                                                echo $user['id'];
+                                                ?>)">
+                                            <span class="fa fa-trash"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <?php
+                            }
+                            ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    protected function blockJavascript()
+    {
+        parent::blockJavascript();
+        ?>
+        <script type="text/javascript">
+            function deleteVideo(description, id) {
+                modalConfirm(
+                    'Voulez-vous vraiment cette source vidéo ? (' + description + ')',
+                    '/p/suppression-video-' + id
+                )
+            }
+
+            function setInactive(description, id) {
+                modalConfirm(
+                    'Voulez-vous désactiver cette source vidéo ? (' + description + ')',
+                    '/p/desactivation-video-' + id
+                )
+            }
+
+            function setActive(description, id) {
+                modalConfirm(
+                    'Voulez-vous activer cette source vidéo ? (' + description + ')',
+                    '/p/activation-video-' + id
+                )
+            }
+
+            function deleteUser(prenom, nom, id) {
+                modalConfirm(
+                    'Voulez-vous vraiment supprimer le compte de cet utilisateur ? (' + prenom + ' ' + nom + ')',
+                    '/p/suppression-utilisateur-' + id
+                )
+            }
+        </script>
+        <?php
+    }
+}

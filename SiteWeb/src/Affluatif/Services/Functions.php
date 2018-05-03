@@ -1,0 +1,227 @@
+<?php
+
+namespace Affluatif\Services;
+
+use Affluatif\BaseClass;
+
+/**
+ * Class Functions
+ *
+ * @package Affluatif\Services
+ */
+class Functions extends BaseClass
+{
+    /**
+     * Échappe les apostrophes et les fins de ligne
+     *
+     * @param array|string $input Le tableau ou texte à nettoyer
+     * @param string       $type  Si ce paramètre est modifié, le caractère spécifié sera échappé à la place de '
+     * @return array|string         Le tableau / chaîne résultat
+     */
+    public static function escapeSQuoteAndNL($input, $type = "'")
+    {
+        if (!is_array($input)) {
+            return str_replace(
+                ["\n", "\r", $type, htmlentities($type, ENT_QUOTES)],
+                ['\n', '\r', "\\$type", "\\" . htmlentities($type, ENT_QUOTES)],
+                $input
+            );
+        }
+
+        $output = [];
+
+        foreach ($input as $key => $value) {
+            $output[$key] = self::escapeSQuoteAndNL($value, $type);
+        }
+
+        return $output;
+    }
+
+    /**
+     * Échappe les guillemets et les fins de ligne
+     *
+     * @see Functions::escapeSQuoteAndNL()
+     * @param array|string $input
+     * @return array|string
+     */
+    public static function escapeQuoteAndNL($input)
+    {
+        return self::escapeSQuoteAndNL($input, '"');
+    }
+
+    /**
+     * @param array|string $input
+     * @return array|string
+     */
+    public static function cleanInput($input)
+    {
+        if (is_array($input)) {
+            $out = [];
+            foreach ($input as $key => $value) {
+                $out[$key] = self::cleanInput($value);
+            }
+            return $out;
+        }
+
+        return strip_tags($input);
+    }
+
+    /**
+     * Formatte un tableau PHP sous la forme d'une chaîne resprésentant un tableau utilisable directement en JavaScript
+     * @param array $array
+     * @return string
+     */
+    public static function jsArray(array $array): string
+    {
+        $output = '[';
+        foreach ($array as $value) {
+            if (is_array($value)) {
+                $output .= self::jsArray($value) . ',';
+            } else {
+                $output .= is_numeric($value) ? $value . ',' : "'" . self::escapeSQuoteAndNL($value) . "',";
+            }
+        }
+
+        return substr($output, 0, -1) . ']';
+    }
+
+    /**
+     * Renvoie les derniers jours / heures / minutes dans un tableau
+     *
+     * @param int    $n      Nombre de jours
+     * @param string $type   Intervalle de temps considéré (days / hours / minutes)
+     * @param string $format Format date()
+     * @return array Tableau des derniers jours
+     */
+    public static function last(int $n = 30, string $type = 'days', string $format = 'd/m')
+    {
+        $now = time();
+        $mult = 24 * 3600;
+        switch ($type) {
+            case 'days':
+                $mult = 24 * 3600;
+                break;
+            case 'hours':
+                $mult = 3600;
+                break;
+            case 'minutes':
+                $mult = 5 * 60;
+                break;
+        }
+        $out = [];
+        for ($offset = $n; $offset > 0; $offset--) {
+            $time  = $now - $offset * $mult;
+            $out[] = date($format, $time);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Renvoie l'objet DateTime correspondant à la date passée en paramètre
+     *
+     * @param string|\DateTime $date
+     * @return \DateTime
+     */
+    public static function datify($date): \DateTime
+    {
+        if (!($date instanceof \DateTime)) {
+            $date = new \DateTime($date);
+        }
+
+        return $date;
+    }
+
+    /**
+     * Convertit une date en chaîne au format français
+     * @param string|\DateTime $date    La date à convertir (texte ou DateTime)
+     * @param bool             $hour    Garder l'affichage des heures
+     * @param bool             $year    Garder l'affichage de l'année
+     * @param bool             $numeric FALSE pour afficher la date complète en lettre, VRAI pour l'afficher en
+     *                                  chiffres seulement
+     * @return string
+     */
+    public static function dateToFrench($date, $hour = true, $year = null, $numeric = false)
+    {
+        $date = self::datify($date);
+
+        $year = is_null($year) ? ((new \DateTime())->format('Y') != $date->format('Y')) : $year;
+
+        if ($numeric) {
+            $format = 'd/m';
+            $format .= $year ? '/Y' : '';
+            $format .= $hour ? ' à H\hi' : '';
+            return $date->format($format);
+        } else {
+            $format = '%A %e';
+            $format .= ($date->format('d') == 1) ? 'er' : '';
+            $format .= ' %B';
+            $format .= $year ? ' %Y' : '';
+            $format .= $hour ? ' à %kh%M' : '';
+            return strftime($format, $date->getTimestamp());
+        }
+    }
+
+    /**
+     * Affiche les numéros de pages centrés sur toute la largeur (avec les liens correspondants)
+     *
+     * @param int    $total            Nombre total d'entrée dans toutes les pages
+     * @param int    $activePage       La page active
+     * @param int    $pageSize         Le nombre d'éléments par page
+     * @param string $pageGetParameter Le nom du paramètre GET correspondant à la pagination
+     * @param array  $getExclude       Les éventuels paramètre GET à exclure lors de la génération d'URL
+     */
+    public function renderPaginator(
+        int $total,
+        int $activePage,
+        int $pageSize = 9,
+        string $pageGetParameter = 'p',
+        array $getExclude = ['id' => ''])
+    {
+        $pageURL = strtok($_SERVER['REQUEST_URI'], '?');
+        $nbPages = ceil($total / $pageSize); // ceil = arrondir à l'entier supérieur
+        $newGet  = array_diff_key($_GET, $getExclude);
+
+        if ($nbPages > 1) {
+            ?>
+            <div style="text-align: center; width: 100%; margin-top: 20px;">
+                <ul class="pagination">
+                    <?php
+                    if ($activePage > 1) {
+                        ?>
+                        <li>
+                            <a href="<?php
+                            $newGet[$pageGetParameter] = $activePage - 1;
+                            echo $pageURL . '?' . http_build_query($newGet);
+                            ?>">&laquo;</a>
+                        </li>
+                        <?php
+                    }
+                    for ($k = 1; $k <= $nbPages; $k++) {
+                        ?>
+                        <li <?php if ($k == $activePage) {
+                            echo 'class="active"';
+                        } ?>>
+                            <a href="<?php
+                            $newGet[$pageGetParameter] = $k;
+                            echo $pageURL . '?' . http_build_query($newGet);
+                            ?>"><?php echo $k; ?></a>
+                        </li>
+                        <?php
+                    }
+                    if ($activePage != $nbPages) {
+                        ?>
+                        <li>
+                            <a href="<?php
+                            $newGet[$pageGetParameter] = $activePage + 1;
+                            echo $pageURL . '?' . http_build_query($newGet);
+                            ?>">&raquo;</a>
+                        </li>
+                        <?php
+                    } ?>
+                </ul>
+            </div>
+            <?php
+        }
+    }
+}

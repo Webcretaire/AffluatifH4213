@@ -1,0 +1,35 @@
+# Démarrage du module d'URL Rewriting :
+
+# Options +FollowSymlinks
+
+RewriteEngine On
+
+php_value upload_max_filesize 500M
+php_value post_max_size 500M
+
+# Redirection http vers https si besoin :
+
+# RewriteCond %{HTTPS} off
+# RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
+
+# Gestion des erreurs :
+
+#ErrorDocument 404 /erreur.php?erreur=404
+
+#ErrorDocument 403 /erreur.php?erreur=403
+
+#ErrorDocument 500 /erreur.php?erreur=500
+
+# Rewriting :
+
+RewriteRule ^p/suppression-utilisateur-([0-9]+) /p/suppression-utilisateur?u=$1&%{QUERY_STRING}
+RewriteRule ^p/suppression-video-([0-9]+) /p/suppression-video?u=$1&%{QUERY_STRING}
+RewriteRule ^p/desactivation-video-([0-9]+) /p/desactivation-video?s=$1&%{QUERY_STRING}
+RewriteRule ^p/activation-video-([0-9]+) /p/activation-video?s=$1&%{QUERY_STRING}
+RewriteRule ^video-([0-9]+) /video?f=$1&%{QUERY_STRING}
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-l
+
+RewriteRule .* index.php [L]

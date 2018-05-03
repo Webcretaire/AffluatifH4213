@@ -1,0 +1,29 @@
+routes:
+  - uri: '/m/connexion'
+    controller: 'Affluatif\View\Modal\ConnexionModale'
+
+  - uri: '/m/ajout-source'
+    controller: 'Affluatif\View\Modal\AjoutSourceModale'
+
+  - uri: '/m/edition-source'
+    controller: 'Affluatif\View\Modal\AjoutSourceModale'
+    action: 'autocomplete'
+
+  - uri: '/m/ajout-utilisateur'
+    controller: 'Affluatif\View\Modal\AjoutUserModale'
+
+  - uri: '/m/edition-utilisateur'
+    controller: 'Affluatif\View\Modal\AjoutUserModale'
+    action: 'autocomplete'
+
+  - uri: '/m/confirmation'
+    controller: 'Affluatif\View\Modal\ConfirmModale'
+
+  - uri: '/m/droits-utilisateur'
+    controller: 'Affluatif\View\Modal\DroitsUserModale'
+
+  - uri: '/m/alertes'
+    controller: 'Affluatif\View\Modal\AlertesModale'
+
+  - uri: '/m/contact'
+    controller: 'Affluatif\View\Modal\ContactModale'

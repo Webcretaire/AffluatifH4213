@@ -1,0 +1,75 @@
+<?php
+
+namespace Affluatif\Processing;
+
+use Affluatif\BaseClass;
+use Affluatif\Services\Functions;
+use Affluatif\Services\Securite;
+
+/**
+ * Class AlertesProcessing
+ *
+ * @package Affluatif\Processing
+ */
+class AlertesProcessing extends BaseClass
+{
+    public function ajout()
+    {
+        $this->services->getSecurite()->verificationFlux(Securite::validateInt($_GET['f']));
+
+        $post = Functions::cleanInput($_POST);
+
+        $check = $this->bddRequest(
+            'SELECT id 
+            FROM alertes 
+            WHERE flux_id = :f
+              AND (
+                heure_debut <= :hd AND heure_fin >= :hd OR 
+                heure_debut <= :hf AND heure_fin >= :hf OR 
+                heure_debut >= :hd AND heure_fin <= :hf
+              )',
+            [
+                'f'  => $_GET['f'],
+                'hd' => $post['heure_debut'],
+                'hf' => $post['heure_fin'],
+            ]
+        );
+
+        if ($check->fetch()) {
+            $this->services->getNotify()->setNotif("Les heures intersectent une autre alerte", 'danger');
+            $this->redirectToReferer();
+        }
+
+        $this->bddRequest(
+            'INSERT INTO alertes (flux_id, heure_debut, heure_fin) 
+            VALUES (:flux_id, :heure_debut, :heure_fin)',
+            [
+                'flux_id'     => $_GET['f'],
+                'heure_debut' => $post['heure_debut'],
+                'heure_fin'   => $post['heure_fin'],
+            ]
+        );
+
+        $this->services->getNotify()->setNotif('Alerte ajoutée', 'success', 5000);
+
+        $this->redirectToURI('/alertes');
+    }
+
+    public function suppression()
+    {
+        if (!$this->services->getSecurite()->isAdmin()) {
+            $this->services->getSecurite()->verificationFlux(
+                $this->bddRequest(
+                    'SELECT flux_id FROM alertes WHERE id = :id',
+                    ['id' => Securite::validateInt($_GET['a'])]
+                )->fetchColumn()
+            );
+        }
+
+        $this->bddRequest('DELETE FROM alertes WHERE id = :id', ['id' => $_GET['a']]);
+
+        $this->services->getNotify()->setNotif('Alerte supprimée', 'success', 5000);
+
+        $this->redirectToReferer();
+    }
+}

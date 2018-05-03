@@ -1,0 +1,226 @@
+<?php
+
+namespace Affluatif\Services;
+
+use Affluatif\BaseClass;
+
+/**
+ * Class Securite
+ *
+ * Gère les autorisations sur le site
+ * @package Affluatif\Services
+ */
+class Securite extends BaseClass
+{
+    static $statuts = [
+        'Utilisateur' => 0,
+        'Admin'       => 1,
+    ];
+
+    public function verificationAdmin()
+    {
+        if (!$this->isAdmin()) {
+            $this->deny();
+        }
+    }
+
+    public function verificationUser()
+    {
+        if (!$this->isUser()) {
+            $this->deny();
+        }
+    }
+
+    public function verificationFlux(int $flux)
+    {
+        if (!$this->hasFlux($flux)) {
+            $this->deny();
+        }
+    }
+
+    public function isConnecte()
+    {
+        return isset($_SESSION['statut']);
+    }
+
+    public function isUser()
+    {
+        return $this->isConnecte() && $_SESSION['statut'] >= self::$statuts['Utilisateur'];
+    }
+
+    public function isAdmin()
+    {
+        return $this->isConnecte() && $_SESSION['statut'] >= self::$statuts['Admin'];
+    }
+
+    private function hasFlux(int $flux)
+    {
+        return $this->isAdmin() ||
+            $this->isUser() &&
+            is_array($_SESSION['flux_allowed']) &&
+            in_array($flux, $_SESSION['flux_allowed']);
+    }
+
+    /**
+     * Donne le texte correspondant à un statut
+     * @param int $code
+     * @return string
+     */
+    public function getStatut(int $code)
+    {
+        return array_search($code, self::$statuts);
+    }
+
+    /**
+     * Génère une erreur 403
+     */
+    public function deny()
+    {
+        $errorPage = new \Affluatif\View\Erreur(403);
+        $errorPage->render();
+        die();
+    }
+
+    /**
+     * Simple method to encrypt or decrypt a plain text string
+     *
+     * Initialization vector(IV) has to be the same when encrypting and decrypting
+     * @param string $action Can be 'encrypt' or 'decrypt'
+     * @param string $string String to encrypt or decrypt
+     * @param string $key    Add a custom key for increased security
+     * @return string
+     */
+    public function encrypt_decrypt($action, $string, $key = '')
+    {
+        $encrypt_method = 'AES-256-CBC';
+        $secret_key     = $this->services->getConfig()->getAesKey() . $key;
+        $secret_iv      = $this->services->getConfig()->getAesIv();
+        // hash
+        $key = hash('sha256', $secret_key);
+
+        // iv - encrypt method AES-256-CBC expects 16 bytes - else you will get a warning
+        $iv     = substr(hash('sha256', $secret_iv), 0, openssl_cipher_iv_length($encrypt_method));
+        $output = '';
+        if ($action == 'encrypt') {
+            $output = openssl_encrypt($string, $encrypt_method, $key, 0, $iv);
+        } else {
+            if ($action == 'decrypt') {
+                $output = openssl_decrypt($string, $encrypt_method, $key, 0, $iv);
+            }
+        }
+        return $output;
+    }
+
+    /**
+     * AES encryption
+     * @param string $string Text to encrypt
+     * @param string $key    Optionnal custom key to improve secutity
+     * @return string
+     */
+    public function aesEncrypt($string, $key = '')
+    {
+        return $this->encrypt_decrypt('encrypt', $string, $key);
+    }
+
+    /**
+     * AES decryption
+     * @param string $string Text to decrypt
+     * @param string $key    Custom key
+     * @return string
+     */
+    public function aesDecrypt($string, $key = '')
+    {
+        return $this->encrypt_decrypt('decrypt', $string, $key);
+    }
+
+
+
+    // ==============================================
+    // ===== Validations des types de variables =====
+    // ==============================================
+
+
+    /**
+     * Vérifie que la variable passée est une date valide
+     * @param $var
+     * @return mixed
+     */
+    public static function validateDate($var)
+    {
+        if (strtotime($var)) {
+            return $var;
+        }
+
+        self::incorrectData();
+
+        return null;
+    }
+
+    /**
+     * Vérifie que la variable passée est un entier valide
+     * @see Securite::filterVarValidation()
+     * @param $var
+     * @return mixed
+     */
+    public static function validateInt($var)
+    {
+        if (filter_var($var, FILTER_VALIDATE_INT) === 0) {
+            return 0;
+        }
+
+        return self::filterVarValidation($var, FILTER_VALIDATE_INT);
+    }
+
+    /**
+     * Vérifie que la variable passée est une date valide
+     *
+     * Cette fonction est dangereuse en l'état: si on l'utilise dans un if, celui ci vaudra FALSE si la variable est
+     * bien un booleen (mais vaut FALSE)
+     * @see Securite::filterVarValidation()
+     * @param $var
+     * @return mixed
+     */
+    public static function validateBoolean($var)
+    {
+        return self::filterVarValidation($var, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * Vérifie que la variable passée est une adresse mail valide
+     * @see Securite::filterVarValidation()
+     * @param $var
+     * @return mixed
+     */
+    public static function validateMail($var)
+    {
+        return self::filterVarValidation($var, FILTER_VALIDATE_EMAIL);
+    }
+
+    /**
+     * Vérifie que la variable passée est conforme au type de validation spécifié
+     * @see Securite::incorrectData()
+     * @param mixed $var  La variable à tester
+     * @param int   $mode Le type de validation à utiliser
+     * @return mixed        La variable non modifiée si elle est conforme (redirige vers une page d'erreur sinon)
+     */
+    private static function filterVarValidation($var, int $mode)
+    {
+        if ($filtered = filter_var($var, $mode)) {
+            return $filtered;
+        }
+
+        self::incorrectData();
+
+        return null;
+    }
+
+    /**
+     * Gère une erreur de données incorrectes
+     */
+    private static function incorrectData()
+    {
+        $errorPage = new \Affluatif\View\Erreur(500);
+        $errorPage->render();
+        die();
+    }
+}

@@ -1,0 +1,80 @@
+<?php
+
+namespace Affluatif\Services;
+
+use Affluatif\BaseClass;
+use PhpAmqpLib\Channel\AMQPChannel;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Message\AMQPMessage;
+
+/**
+ * Class RabbitMQ
+ *
+ * @package Affluatif\Services
+ */
+class RabbitMQ extends BaseClass
+{
+    /**
+     * @var AMQPStreamConnection
+     */
+    private $connection;
+
+    /**
+     * @var AMQPChannel
+     */
+    private $channel;
+
+    /**
+     * RabbitMQ constructor.
+     *
+     * Initie la connexion à RabbitMQ et crée la queue d'interprétation si elle n'existe pas
+     * @param \PDO $bdd
+     */
+    public function __construct(\PDO $bdd = null)
+    {
+        parent::__construct($bdd);
+        $this->connection = new AMQPStreamConnection(
+            $this->services->getConfig()->getRabbitmqHost(),
+            $this->services->getConfig()->getRabbitmqPort(),
+            $this->services->getConfig()->getRabbitmqLogin(),
+            $this->services->getConfig()->getRabbitmqPassword()
+        );
+        $this->channel    = $this->connection->channel();
+        $this->channel->queue_declare('interpretation', false, false, false, false);
+    }
+
+    /**
+     * Envoie une commande d'ajout de source vidéo aux interpréteurs
+     *
+     * @param array $source La source vidéo
+     */
+    public function newVideoSource(array $source)
+    {
+        $this->bddRequest('UPDATE flux_video SET waiting_interpret = 1 WHERE id = :id', ['id' => $source['id']]);
+
+        $this->channel->basic_publish(
+            new AMQPMessage(
+                json_encode(
+                    [
+                        'action'  => 'ajout_source',
+                        'donnees' => [
+                            'id'  => $source['id'],
+                            'url' => $source['url'],
+                        ],
+                    ]
+                )
+            ),
+            '',
+            'interpreter_stream'
+        );
+    }
+
+    /**
+     * Ferme la connexion à RabbitMQ
+     */
+    public function __destruct()
+    {
+        $this->channel->close();
+        $this->connection->close();
+    }
+}

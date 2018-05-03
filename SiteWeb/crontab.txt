@@ -1,0 +1,1 @@
+*/5 * * * * php /var/www/cron/interpreter_manager.php >/var/www/cron/interpreter_manager_log.txt

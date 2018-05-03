@@ -1,0 +1,231 @@
+<?php
+
+namespace Affluatif\View;
+
+use Affluatif\BaseClass;
+use MatthiasMullie\Minify\JS;
+
+/**
+ * Class BaseTemplate
+ *
+ * @package Affluatif\View
+ */
+abstract class BaseTemplate extends BaseClass
+{
+    protected $page_title = 'Affluatif';
+
+    public function getHTML()
+    {
+        ob_start();
+        $this->render();
+        $html_output = ob_get_contents();
+        ob_end_clean();
+
+        return $html_output;
+    }
+
+    public function render()
+    {
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <?php $this->blockHead(); ?>
+        </head>
+
+
+        <body>
+
+        <?php
+        if (isset($this->services) && !is_null($this->services)) {
+            echo $this->services->getNotify()->checkNotifs();
+        }
+
+        $this->blockBody();
+
+        ob_start();
+        $this->blockJavascript();
+        $js = ob_get_contents();
+        ob_end_clean();
+        $minifier = new JS($js);
+        echo $minifier->minify();
+        ?>
+        </body>
+        </html>
+        <?php
+    }
+
+    protected function blockHead()
+    {
+        ?>
+        <!-- Mobile Specific Meta -->
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <!-- meta character set -->
+        <meta charset="UTF-8">
+        <title><?php echo $this->page_title; ?></title>
+        <link rel="icon" type="image/png" href="/img/logo.png"/>
+
+        <script src="/js/vendor/jquery-2.2.4.min.js"></script>
+        <script src="/js/bootstrap-notify.min.js"></script>
+
+        <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,400,300,500,600,700" rel="stylesheet">
+
+        <link rel="stylesheet" href="/css/linearicons.css">
+        <link rel="stylesheet" href="/css/owl.carousel.css">
+        <link rel="stylesheet" href="/css/font-awesome.min.css">
+        <link rel="stylesheet" href="/css/nice-select.css">
+        <link rel="stylesheet" href="/css/magnific-popup.css">
+        <link rel="stylesheet" href="/css/bootstrap.css">
+        <link rel="stylesheet" href="/css/main.css">
+        <link rel="stylesheet" href="/css/custom.css">
+        <link rel="stylesheet" href="/css/animate.min.css">
+        <?php
+    }
+
+    protected function blockBody()
+    {
+        ?>
+        <header id="header">
+            <div class="container">
+                <div class="row align-items-center justify-content-between d-flex">
+                    <div id="logo">
+                        <a href="/"><img src="/img/logo_text.png" alt="logo" height="64"/></a>
+                    </div>
+                    <nav id="nav-menu-container">
+                        <ul class="nav-menu">
+                            <li class="menu-active"><a href="/">Accueil</a></li>
+                            <?php if ($this->services->getSecurite()->isAdmin()) { ?>
+                                <li><a href="/admin/">Administration</a></li>
+                            <?php }
+                            if ($this->services->getSecurite()->isUser()) { ?>
+                                <li><a href="/direct">Flux vidéos</a></li>
+                                <li><a href="/alertes">Mes alertes</a></li>
+                            <?php } ?>
+                        </ul>
+                    </nav><!-- #nav-menu-container -->
+                </div>
+            </div>
+        </header><!-- #header -->
+
+        <section class="generic-banner relative background-city">
+            <div class="container">
+                <div class="row height align-items-center justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="generic-banner-content">
+                            <?php $this->blockBanner(); ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- End banner Area -->
+
+        <!-- About Generic Start -->
+        <div class="main-wrapper">
+            <?php $this->blockMainWrapper(); ?>
+        </div>
+        <?php
+    }
+
+    protected function blockJavascript()
+    {
+        ?>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+                integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+                crossorigin="anonymous"></script>
+        <script src="/js/vendor/bootstrap.min.js"></script>
+        <script src="/js/easing.min.js"></script>
+        <script src="/js/hoverIntent.js"></script>
+        <script src="/js/superfish.min.js"></script>
+        <script src="/js/jquery.ajaxchimp.min.js"></script>
+        <script src="/js/jquery.magnific-popup.min.js"></script>
+        <script src="/js/owl.carousel.min.js"></script>
+        <script src="/js/jquery.sticky.js"></script>
+        <script src="/js/jquery.nice-select.min.js"></script>
+        <script src="/js/parallax.min.js"></script>
+        <script src="/js/mail-script.js"></script>
+        <script src="/js/main.js"></script>
+        <script type="text/javascript">
+            var modalesLoaded = [];
+
+            function updateModale(url, id, callback = function () {
+            }) {
+                if (modalesLoaded.indexOf(id) !== -1) {
+                    $('#' + id).remove();
+                    modalesLoaded = jQuery.grep(modalesLoaded, function (value) { // Delete item
+                        return value !== id;
+                    });
+                }
+                loadModale(url, id, callback);
+            }
+
+            function loadModale(url, id, callback = function () {
+            }) {
+                if (modalesLoaded.indexOf(id) === -1) {
+                    $.get(url, function (data) {
+                        modalesLoaded.push(id);
+                        $(data).prependTo("body");
+                        updateNiceSelects();
+                        callback();
+                        $('#' + id).modal('show');
+                    });
+                }
+                else {
+                    callback();
+                    $('#' + id).modal('show');
+                }
+            }
+
+            function updateNiceSelects() {
+                $('select').niceSelect();
+            }
+
+            function modalConfirm(message, url) {
+                loadModale('/m/confirmation', 'modale__confirm', function () {
+                    $('#confirm_message').text(message);
+                    $('#confirm_success').on('click', function () {
+                        window.location.href = url;
+                    });
+                });
+            }
+        </script>
+        <?php
+    }
+
+    protected function blockBanner()
+    {
+    }
+
+    protected function blockMainWrapper()
+    {
+        $this->blockSections();
+        ?>
+        <!-- start footer Area -->
+        <footer class="footer-area section-gap">
+            <div class="container">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="single-footer-widget">
+                            <h6>Heptanôme H4213</h6>
+                            <p class="footer-text">
+                                Lucas POISSE, Cyril POTTIEZ, Julien EMMANUEL, Manuel AMOUROUX, Pascal CHIU, Danh Lap
+                                NGUYEN, Timothée DURAND
+                            </p>
+                            <p class="footer-text">
+                                Copyright &copy;<script>document.write(new Date().getFullYear());</script>
+                                All rights reserved | HTML template made with
+                                <i class="fa fa-heart-o" aria-hidden="true"></i> by
+                                <a href="https://colorlib.com" target="_blank">Colorlib</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <?php
+    }
+
+    protected function blockSections()
+    {
+    }
+}
