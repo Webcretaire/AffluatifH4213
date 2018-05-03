@@ -1,6 +1,6 @@
 # Affluatif - Site Web #
 
-Ce repo contient le site web qui fait office d'interface pour le projet, codé en PHP
+Ce repo contient le site web qui fait office d'interface pour le projet, codé en PHP. La documentation du code se trouve dans le dossier [html/docs](html/docs) au format HTML.
 
 ## Installation ##
 
