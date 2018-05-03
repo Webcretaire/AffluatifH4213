@@ -1,6 +1,6 @@
 # Présentation
 Ce composant est en charge 
-*  du "fitting" de modèle de prédiction d'affluence sur réception d'évènements sur une queue RabbitMQ 
+*  du "fitting" de modèles de prédiction d'affluence sur réception d'évènements sur une queue RabbitMQ 
 *  de la prédiction d'affluence sur appel à une API Rest
 
 L'API Rest est codée avec le framework Flask et les modèles sont écrits dans le langage R.
