@@ -8,12 +8,16 @@ L'API Rest est codée avec le framework Flask et les modèles sont écrits dans 
 # Procédure d'installation
 1. installer apache2 avec mod_wsgi: sudo apt-get install libapache2-mod-wsgi-py3
 2. cloner le dépôt et se déplacer dans le dossier analyseur
-3. installer anaconda, créer un environnement (à partir du dossier [Python](./Python)) :
+3. créer un dossier ici [R/Engine/data](./R/Engine/data)
+```bash 
+mkdir model
+```
+4. installer anaconda, créer un environnement (à partir du dossier [Python](./Python)) :
 ```bash 
 conda env create -f environment.yml
 ```
-4. installer R et les librairies forecast, anytime , lubridate et plotly
-5. Pour la partie fitting du modèle
+5. installer R et les librairies forecast, anytime , lubridate et plotly
+6. Pour la partie fitting du modèle
    1. lancer une session screen
    2. se placer dans le dossier  [Python](./Python)
    3. activer l’environnement: 
@@ -25,7 +29,7 @@ conda env create -f environment.yml
    ```bash 
    python RMQ_receiver.py
    ```
-1. Pour la partie prédiction 
+7. Pour la partie prédiction 
    1. copier les fichiers du dossier [/devops/apache2](./devops/apache2) dans /etc/apache2/sites-available/ et modifier les chemins spécifiés dans ces fichiers
    2. lancer un script : 
    ```bash 
